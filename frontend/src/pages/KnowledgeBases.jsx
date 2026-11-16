@@ -1,7 +1,17 @@
 
 import { useCallback, useEffect, useState } from "react";
-import { AlertCircle, Database, RefreshCw } from "lucide-react";
-import { getKnowledgeBases } from "../services/api";
+import {
+  AlertCircle,
+  Database,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
+import {
+  getKnowledgeBases,
+  createKnowledgeBase,
+  deleteKnowledgeBase,
+} from "../services/api";
 
 function formatDate(value) {
   if (!value) return "Date unavailable";
@@ -21,6 +31,10 @@ export default function KnowledgeBases() {
   const [knowledgeBases, setKnowledgeBases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [name, setName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [notice, setNotice] = useState("");
 
   const loadKnowledgeBases = useCallback(async () => {
     setLoading(true);
@@ -45,13 +59,64 @@ export default function KnowledgeBases() {
     loadKnowledgeBases();
   }, [loadKnowledgeBases]);
 
+  async function handleCreate(event) {
+    event.preventDefault();
+
+    const trimmedName = name.trim();
+
+    if (!trimmedName) {
+      setError("Enter a name for the knowledge base.");
+      return;
+    }
+
+    setCreating(true);
+    setError("");
+    setNotice("");
+
+    try {
+      await createKnowledgeBase(trimmedName);
+      setName("");
+      setNotice("Knowledge base created successfully.");
+      await loadKnowledgeBases();
+    } catch (err) {
+      setError(err.message || "Failed to create knowledge base.");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleDelete(knowledgeBase) {
+    if (
+      !window.confirm(
+        `Delete "${knowledgeBase.name}"? Only empty knowledge bases can be deleted.`
+      )
+    ) {
+      return;
+    }
+
+    setDeletingId(knowledgeBase.id);
+    setError("");
+    setNotice("");
+
+    try {
+      await deleteKnowledgeBase(knowledgeBase.id);
+      setNotice(`"${knowledgeBase.name}" was deleted successfully.`);
+      await loadKnowledgeBases();
+    } catch (err) {
+      setError(err.message || "Failed to delete knowledge base.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <section className="section-block">
       <div className="section-heading">
         <div>
           <h2>Your knowledge bases</h2>
           <p>
-            Browse the collections available in your DeepDoc AI workspace.
+            Browse and manage the collections available in your DeepDoc AI
+            workspace.
           </p>
         </div>
 
@@ -65,6 +130,81 @@ export default function KnowledgeBases() {
           {loading ? "Refreshing..." : "Refresh"}
         </button>
       </div>
+
+      <article
+        className="action-card"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "40px minmax(180px, 1fr) auto",
+          alignItems: "center",
+          gap: "14px",
+        }}
+      >
+        <div className="action-icon">
+          <Plus size={20} />
+        </div>
+
+        <div className="action-copy">
+          <h3>Create a knowledge base</h3>
+          <p>Organize your documents into a new collection.</p>
+        </div>
+
+        <form
+          onSubmit={handleCreate}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            gap: "12px",
+            minWidth: 0,
+            margin: 0,
+          }}
+        >
+          <input
+            type="text"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="Enter knowledge base name"
+            maxLength={200}
+            required
+            disabled={creating}
+            aria-label="Knowledge base name"
+            style={{
+              boxSizing: "border-box",
+              display: "block",
+              flex: "0 0 240px",
+              width: "240px",
+              minWidth: 0,
+              maxWidth: "240px",
+              height: "42px",
+              padding: "10px 12px",
+              border: "1px solid rgba(176, 163, 214, 0.2)",
+              borderRadius: "9px",
+              backgroundColor: "#171525",
+              color: "#f0edf9",
+              fontFamily: "DM Sans, sans-serif",
+              fontSize: "12px",
+              colorScheme: "dark",
+            }}
+          />
+
+          <button
+            className="button-primary"
+            type="submit"
+            disabled={creating || !name.trim()}
+            style={{ flexShrink: 0 }}
+          >
+            <Plus size={16} />
+            {creating ? "Creating..." : "Create"}
+          </button>
+        </form>
+      </article>
+
+      {notice && (
+        <div className="placeholder-note" role="status">
+          {notice}
+        </div>
+      )}
 
       {error && (
         <div className="placeholder-note" role="alert">
@@ -92,12 +232,9 @@ export default function KnowledgeBases() {
             <Database size={27} />
           </div>
           <h2>No knowledge bases yet</h2>
-          <p>
-            Your collections will appear here once they are available in the
-            backend.
-          </p>
+          <p>Create a knowledge base above to get started.</p>
         </div>
-      ) : !error ? (
+      ) : (
         <>
           <div className="metrics-grid">
             <article className="metric-card">
@@ -112,10 +249,7 @@ export default function KnowledgeBases() {
 
           <div className="actions-grid">
             {knowledgeBases.map((knowledgeBase) => (
-              <article
-                className="action-card"
-                key={knowledgeBase.id}
-              >
+              <article className="action-card" key={knowledgeBase.id}>
                 <div className="action-icon">
                   <Database size={20} />
                 </div>
@@ -125,11 +259,24 @@ export default function KnowledgeBases() {
                   <p>Knowledge base ID: {knowledgeBase.id}</p>
                   <p>Created {formatDate(knowledgeBase.created_at)}</p>
                 </div>
+
+                <button
+                  className="button-secondary"
+                  type="button"
+                  onClick={() => handleDelete(knowledgeBase)}
+                  disabled={deletingId !== null || creating}
+                  title="Delete this knowledge base"
+                >
+                  <Trash2 size={16} />
+                  {deletingId === knowledgeBase.id
+                    ? "Deleting..."
+                    : "Delete"}
+                </button>
               </article>
             ))}
           </div>
         </>
-      ) : null}
+      )}
     </section>
   );
 }

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Sidebar from "./components/layout/Sidebar";
 import Header from "./components/layout/Header";
@@ -8,9 +9,19 @@ import ResearchAssistant from "./pages/ResearchAssistant";
 import "./styles/global.css";
 
 function AppLayout() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed((current) => !current);
+  };
+
   return (
-    <div className="app-shell">
-      <Sidebar />
+    <div className={`app-shell${sidebarCollapsed ? " sidebar-is-collapsed" : ""}`}>
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggle={toggleSidebar}
+      />
+
       <div className="main-area">
         <Header />
         <main className="page-content">

@@ -8,20 +8,14 @@ def create_knowledge_base(
     db: Session,
     name: str,
 ):
-    existing = get_knowledge_base_by_name(
-        db,
-        name,
-    )
+    existing = get_knowledge_base_by_name(db, name)
 
     if existing is not None:
         raise ValueError(
             f"Knowledge base '{name}' already exists."
         )
 
-    knowledge_base = KnowledgeBase(
-        name=name,
-    )
-
+    knowledge_base = KnowledgeBase(name=name)
     db.add(knowledge_base)
 
     try:
@@ -33,7 +27,6 @@ def create_knowledge_base(
         )
 
     db.refresh(knowledge_base)
-
     return knowledge_base
 
 
@@ -43,9 +36,7 @@ def get_knowledge_base(
 ):
     return (
         db.query(KnowledgeBase)
-        .filter(
-            KnowledgeBase.id == knowledge_base_id
-        )
+        .filter(KnowledgeBase.id == knowledge_base_id)
         .first()
     )
 
@@ -56,9 +47,7 @@ def get_knowledge_base_by_name(
 ):
     return (
         db.query(KnowledgeBase)
-        .filter(
-            KnowledgeBase.name == name
-        )
+        .filter(KnowledgeBase.name == name)
         .first()
     )
 
@@ -68,8 +57,29 @@ def list_knowledge_bases(
 ):
     return (
         db.query(KnowledgeBase)
-        .order_by(
-            KnowledgeBase.created_at.desc()
-        )
+        .order_by(KnowledgeBase.created_at.desc())
         .all()
     )
+
+
+def delete_empty_knowledge_base(
+    db: Session,
+    knowledge_base_id: int,
+):
+    knowledge_base = get_knowledge_base(
+        db,
+        knowledge_base_id,
+    )
+
+    if knowledge_base is None:
+        raise LookupError("Knowledge base not found.")
+
+    if knowledge_base.documents:
+        raise ValueError(
+            "Cannot delete a knowledge base that contains documents."
+        )
+
+    db.delete(knowledge_base)
+    db.commit()
+
+    return knowledge_base

@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   MessageSquareText,
   PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 
 const navigation = [
@@ -16,18 +17,28 @@ const navigation = [
   { label: "Research Assistant", path: "/research", icon: MessageSquareText },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ collapsed, onToggle }) {
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${collapsed ? " sidebar-collapsed" : ""}`}>
       <div className="brand">
         <div className="brand-icon">
           <BrainCircuit size={23} />
         </div>
+
         <div className="brand-copy">
           <span className="brand-name">DeepDoc AI</span>
           <span className="brand-caption">DOCUMENT INTELLIGENCE</span>
         </div>
-        <PanelLeftClose className="sidebar-toggle" size={19} />
+
+        <button
+          type="button"
+          className="sidebar-toggle"
+          onClick={onToggle}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <PanelLeftOpen size={19} /> : <PanelLeftClose size={19} />}
+        </button>
       </div>
 
       <div className="workspace-label">WORKSPACE</div>
@@ -38,6 +49,7 @@ export default function Sidebar() {
             key={path}
             to={path}
             end={path === "/"}
+            title={collapsed ? label : undefined}
             className={({ isActive }) =>
               `nav-link${isActive ? " active" : ""}`
             }
@@ -52,7 +64,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-bottom">
-        <div className="sidebar-status">
+        <div className="sidebar-status" title={collapsed ? "Workspace ready — Local development" : undefined}>
           <span className="status-dot" />
           <div>
             <div className="status-title">Workspace ready</div>

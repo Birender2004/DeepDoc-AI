@@ -88,10 +88,8 @@ class RAGService:
                 file_path,
                 document_id,
                 knowledge_base_id,
+                filename=filename,
             )
-
-            for document in documents:
-                document.metadata["filename"] = filename
 
             chunks = split_documents(documents)
             self.vector_store.add_documents(chunks)
@@ -214,10 +212,8 @@ class RAGService:
                 file_path,
                 document_id,
                 knowledge_base_id,
+                filename=filename,
             )
-
-            for document in documents:
-                document.metadata["filename"] = filename
 
             chunks = split_documents(documents)
             self.vector_store.add_documents(chunks)

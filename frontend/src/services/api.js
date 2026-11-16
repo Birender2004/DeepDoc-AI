@@ -1,4 +1,3 @@
-
 const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000"
 ).replace(/\/+$/, "");
@@ -40,6 +39,23 @@ export async function apiRequest(path, options = {}) {
 
 export function getKnowledgeBases() {
   return apiRequest("/knowledge-bases");
+}
+
+export function createKnowledgeBase(name) {
+  return apiRequest("/knowledge-bases", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name }),
+  });
+}
+
+export function deleteKnowledgeBase(knowledgeBaseId) {
+  return apiRequest(
+    `/knowledge-bases/${encodeURIComponent(knowledgeBaseId)}`,
+    { method: "DELETE" }
+  );
 }
 
 export function getDocuments(knowledgeBaseId) {
@@ -87,6 +103,32 @@ export function queryDocuments(question, knowledgeBaseId, documentId = null) {
       question,
       knowledge_base_id: Number(knowledgeBaseId),
       document_id: documentId || null,
+    }),
+  });
+}
+
+export function verifiedResearch(question, knowledgeBaseId) {
+  return apiRequest("/verified-research", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      question,
+      knowledge_base_id: Number(knowledgeBaseId),
+    }),
+  });
+}
+
+export function agentResearch(question, knowledgeBaseId) {
+  return apiRequest("/agent-research", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      question,
+      knowledge_base_id: Number(knowledgeBaseId),
     }),
   });
 }

@@ -1,16 +1,24 @@
+
 from app.evaluation.dataset import evaluation_questions
 
 
-print("Evaluation dataset loaded.")
+def test_evaluation_dataset_is_not_empty():
+    assert evaluation_questions
 
-print(f"Number of questions: {len(evaluation_questions)}")
 
-for index, item in enumerate(
-    evaluation_questions,
-    start=1,
-):
-    print(f"\nQuestion {index}:")
-    print(item["question"])
+def test_each_question_has_question_and_ground_truth():
+    for item in evaluation_questions:
+        assert isinstance(item, dict)
+        assert isinstance(item.get("question"), str)
+        assert item["question"].strip()
+        assert isinstance(item.get("ground_truth"), str)
+        assert item["ground_truth"].strip()
 
-    print("Ground Truth:")
-    print(item["ground_truth"])
+
+def test_evaluation_questions_are_unique():
+    questions = [
+        item["question"].strip().casefold()
+        for item in evaluation_questions
+    ]
+
+    assert len(questions) == len(set(questions))

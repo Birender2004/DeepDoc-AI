@@ -1,3 +1,4 @@
+
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -14,10 +15,30 @@ def retrieve_documents(
     retriever,
     query_generator,
     question,
+    use_multi_query=False,
+    num_queries=2,
 ):
+    if not use_multi_query:
+        documents = retriever.invoke(question)
+
+        return {
+            "question": question,
+            "queries": [question],
+            "documents": documents,
+            "raw_document_count": len(documents),
+            "unique_document_count": len(documents),
+            "retrieval_mode": "single_query",
+        }
+
+    if query_generator is None:
+        raise ValueError(
+            "query_generator is required when multi-query retrieval is enabled."
+        )
+
     queries = generate_queries(
         query_generator,
         question,
+        num_queries=num_queries,
     )
 
     documents = retrieve_from_queries(
@@ -25,9 +46,7 @@ def retrieve_documents(
         queries,
     )
 
-    unique_documents = deduplicate_documents(
-        documents
-    )
+    unique_documents = deduplicate_documents(documents)
 
     return {
         "question": question,
@@ -35,6 +54,7 @@ def retrieve_documents(
         "documents": unique_documents,
         "raw_document_count": len(documents),
         "unique_document_count": len(unique_documents),
+        "retrieval_mode": "multi_query",
     }
 
 
@@ -63,18 +83,19 @@ def create_verified_rag(
     retriever,
     query_generator,
     llm,
+    use_multi_query=False,
+    num_queries=2,
 ):
-    answer_generator = create_answer_generator(
-        llm
-    )
-
+    answer_generator = create_answer_generator(llm)
     verifier = create_verifier(llm)
 
     def run(question):
         retrieval = retrieve_documents(
-            retriever,
-            query_generator,
-            question,
+            retriever=retriever,
+            query_generator=query_generator,
+            question=question,
+            use_multi_query=use_multi_query,
+            num_queries=num_queries,
         )
 
         context = format_documents_with_citations(
@@ -99,13 +120,10 @@ def create_verified_rag(
         return {
             "question": question,
             "queries": retrieval["queries"],
+            "retrieval_mode": retrieval["retrieval_mode"],
             "documents": retrieval["documents"],
-            "raw_document_count": retrieval[
-                "raw_document_count"
-            ],
-            "unique_document_count": retrieval[
-                "unique_document_count"
-            ],
+            "raw_document_count": retrieval["raw_document_count"],
+            "unique_document_count": retrieval["unique_document_count"],
             "answer": answer,
             "verification": verification,
         }
