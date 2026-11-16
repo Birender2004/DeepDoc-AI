@@ -1,4 +1,4 @@
-```gitignore
+
 # Environment variables and secrets
 .env
 .env.*
@@ -18,19 +18,22 @@ ENV/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+*.egg-info/
+build/
+dist/
+*.whl
 
-# Backend data and databases
-backend/deepdoc.db
-backend/*.db
-backend/data/uploads/
+# Databases and local application data
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
 backend/data/
 
 # Frontend dependencies
 node_modules/
-frontend/node_modules/
 
 # Frontend build output
-dist/
 frontend/dist/
 
 # Logs
